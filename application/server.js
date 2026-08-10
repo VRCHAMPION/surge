@@ -98,6 +98,73 @@ app.post("/cart", (req, res) => {
   });
 });
 
+app.get("/cart", (req, res) => {
+  res.json(cart);
+});
+
+app.get("/cart/count", (req, res) => {
+  const totalCount = cart.length;
+
+  res.json({
+    count: totalCount,
+  });
+});
+
+app.get("/cart/:id", (req, res) => {
+  const cartId = parseInt(req.params.id);
+
+  const cartItem = cart.find((item) => item.id === cartId);
+
+  if (!cartItem) {
+    return res.status(404).json({
+      error: "Cart item not found",
+    });
+  }
+
+  res.json(cartItem);
+});
+
+app.put("/cart/:id", (req, res) => {
+  const cartId = parseInt(req.params.id);
+
+  const cartItem = cart.find((item) => item.id === cartId);
+
+  if (!cartItem) {
+    return res.status(404).json({
+      error: "Cart item not found",
+    });
+  }
+
+  if (typeof req.body.quantity !== "number" || req.body.quantity <= 0) {
+    return res.status(400).json({
+      error: "quantity must be a positive number",
+    });
+  }
+
+  cartItem.quantity = req.body.quantity;
+
+  res.json({
+    message: "Cart item updated",
+    data: cartItem,
+  });
+});
+
+app.delete("/cart/:id", (req, res) => {
+  const cartId = parseInt(req.params.id);
+
+  const cartIndex = cart.findIndex((item) => item.id === cartId);
+
+  if (cartIndex === -1) {
+    return res.status(404).json({
+      error: "Cart item not found",
+    });
+  }
+
+  cart.splice(cartIndex, 1);
+
+  res.status(204).send();
+});
+
 app.use((err, req, res, next) => {
   console.error(err);
 
