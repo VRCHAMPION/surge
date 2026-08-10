@@ -1,10 +1,13 @@
+require("dotenv").config();
+
 const express = require("express");
 const productRoutes = require("./routes/products");
-
 const cartRoutes = require("./routes/cart");
 
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+console.log(`Environment: ${process.env.NODE_ENV}`);
 
 app.use(express.json());
 
