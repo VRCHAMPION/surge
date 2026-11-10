@@ -1,10 +1,27 @@
 const express = require("express");
+const { randomBytes } = require("node:crypto");
 const products = require("../data/products");
-const cart = require("../data/cart");
+const carts = require("../data/cart");
 
 const router = express.Router();
 
+function getCart(req, res) {
+  let cartId = req.get("Cookie")?.match(/(?:^|;\s*)surge_cart=([a-f0-9]{64})(?:;|$)/)?.[1];
+  if (!cartId) {
+    cartId = randomBytes(32).toString("hex");
+    res.setHeader(
+      "Set-Cookie",
+      `surge_cart=${cartId}; HttpOnly; SameSite=Lax; Path=/cart; Max-Age=2592000`,
+    );
+  }
+
+  if (!carts.has(cartId)) carts.set(cartId, []);
+  return carts.get(cartId);
+}
+
 router.post("/", (req, res) => {
+  const cart = getCart(req, res);
+
   if (req.body.productId === undefined) {
     return res.status(400).json({
       error: "productId is required",
@@ -52,10 +69,12 @@ router.post("/", (req, res) => {
 });
 
 router.get("/", (req, res) => {
+  const cart = getCart(req, res);
   res.json(cart);
 });
 
 router.get("/count", (req, res) => {
+  const cart = getCart(req, res);
   const totalCount = cart.length;
 
   res.json({
@@ -64,6 +83,7 @@ router.get("/count", (req, res) => {
 });
 
 router.get("/:id", (req, res) => {
+  const cart = getCart(req, res);
   const cartId = parseInt(req.params.id);
 
   const cartItem = cart.find((item) => item.id === cartId);
@@ -78,6 +98,7 @@ router.get("/:id", (req, res) => {
 });
 
 router.put("/:id", (req, res) => {
+  const cart = getCart(req, res);
   const cartId = parseInt(req.params.id);
 
   const cartItem = cart.find((item) => item.id === cartId);
@@ -103,6 +124,7 @@ router.put("/:id", (req, res) => {
 });
 
 router.delete("/:id", (req, res) => {
+  const cart = getCart(req, res);
   const cartId = parseInt(req.params.id);
 
   const cartIndex = cart.findIndex((item) => item.id === cartId);
