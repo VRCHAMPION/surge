@@ -1,7 +1,28 @@
 const express = require("express");
+const { timingSafeEqual } = require("node:crypto");
 const pool = require("../database");
 
 const router = express.Router();
+
+function requireAdmin(req, res, next) {
+  const expected = process.env.SURGE_ADMIN_TOKEN;
+  const supplied = req.get("X-Admin-Token") || "";
+
+  if (!expected) {
+    return res.status(503).json({ error: "Product administration is not configured" });
+  }
+
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (
+    expectedBuffer.length !== suppliedBuffer.length ||
+    !timingSafeEqual(expectedBuffer, suppliedBuffer)
+  ) {
+    return res.status(401).json({ error: "Product administration requires authorization" });
+  }
+
+  next();
+}
 
 // GET all products
 router.get("/", async (req, res, next) => {
@@ -34,7 +55,7 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // CREATE a product
-router.post("/", async (req, res, next) => {
+router.post("/", requireAdmin, async (req, res, next) => {
   try {
     const { name, price, stock } = req.body;
 

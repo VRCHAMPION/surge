@@ -1,3 +1,3 @@
-const cart = [];
+const carts = new Map();
 
-module.exports = cart;
+module.exports = carts;
